@@ -27,6 +27,34 @@ def test_create_user(client):
     }
 
 
+def test_create_user_username_already_exists(client, user):
+    response = client.post(
+        '/users/',
+        json={
+            'username': user.username,
+            'password': 'pwd',
+            'email': 'new_test@test.com',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Username alredy exists'}
+
+
+def test_create_user_email_already_exists(client, user):
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'new_user',
+            'password': 'pwd',
+            'email': user.email,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Email alredy exists'}
+
+
 def test_read_users_with_user(client, user):
     response = client.get('/users/')
 
@@ -59,9 +87,10 @@ def test_get_user_wrong_user(client):
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername2',
             'password': '123',
@@ -77,9 +106,10 @@ def test_update_user(client, user):
     }
 
 
-def test_update_user_wrong_user(client, user):
+def test_update_user_wrong_user(client, user, token):
     response = client.put(
         '/users/0',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername2',
             'password': '123',
@@ -87,19 +117,36 @@ def test_update_user_wrong_user(client, user):
         },
     )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permission'}
 
 
-def test_delete_user(client, user):
-    response = client.delete('/users/1')
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
 
 
-def test_delete_user_wrong_user(client, user):
-    response = client.delete('/users/0')
+def test_delete_user_wrong_user(client, user, token):
+    response = client.delete(
+        '/users/0', headers={'Authorization': f'Bearer {token}'}
+    )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permission'}
+
+
+def test_get_token(client, user):
+    response = client.post(
+        '/token/',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert token['token_type'] == 'Bearer'
+    assert token['access_token']
