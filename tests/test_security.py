@@ -1,8 +1,6 @@
-from datetime import datetime, timedelta
 from http import HTTPStatus
 
-from jwt import decode, encode
-from zoneinfo import ZoneInfo
+from jwt import decode
 
 from fast_zero.security import create_access_token, settings
 
@@ -29,15 +27,7 @@ def test_jwt_invalid_token(client):
 
 
 def test_jwt_without_sub_clain(client):
-    expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTOS
-    )
-
-    to_encode = {'sub': None, 'exp': expire}
-
-    token = encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-    )
+    token = create_access_token({})
 
     response = client.delete(
         '/users/1', headers={'Authorization': f'Bearer {token}'}
@@ -48,15 +38,7 @@ def test_jwt_without_sub_clain(client):
 
 
 def test_jwt_invalid_username(client):
-    expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTOS
-    )
-    to_encode = {'sub': 'invalid@mail.com', 'exp': expire}
-
-    token = encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-    )
-
+    token = create_access_token({'sub': 'invalid@user.com'})
     response = client.delete(
         '/users/1', headers={'Authorization': f'Bearer {token}'}
     )
