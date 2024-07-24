@@ -33,7 +33,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
 
     expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTOS
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     to_encode.update({'exp': expire})

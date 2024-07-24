@@ -106,8 +106,6 @@ def test_get_by_id_todo(session, client, user, token):
     session.commit()
     session.refresh(todo)
 
-    print('Tipo: ' + str(type(todo)))
-
     response = client.get(
         f'/todos/{todo.id}', headers={'Authorization': f'Bearer {token}'}
     )
